@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+body {
+   @apply font-mono;
+   /* font-family: "Courier", sans-serif; */
+}
+* {
+   scrollbar-color: #007bff;
+}
+
+::-webkit-scrollbar {
+   @apply w-[0.4rem];
+}
+
+::-webkit-scrollbar-track {
+   @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+   @apply bg-blue-500 opacity-[0.5] rounded-2xl transition-all duration-[0.2s];
+}
+
+::-webkit-scrollbar-thumb:hover {
+   @apply bg-blue-600 opacity-100;
+}
