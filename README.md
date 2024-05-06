@@ -1,8 +1,7 @@
-# React + Vite
+# IpTracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+IpTracker is a React + Vite application that utilizes Leaflet.js and the IP geolocation API called ip-api to track and visualize IP addresses on an interactive map. Easy-to-use and visually engaging, it provides users with instant location insights for any IP address entered.
 
-Currently, two official plugins are available:
+- Made with React + Vite, Tailwind CSS, Leaflet, ip-api
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+<h3>:fire:<a href="https://srk-ip-tracker.netlify.app/" target="_blank"><b>Live Demo</b></a>:fire:</h3>
