@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import * as L from "leaflet";
+import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import marker from "/pin2.gif";
 import { GoChevronRight, GoLocation } from "react-icons/go";
@@ -9,8 +10,8 @@ import { GrCloudComputer } from "react-icons/gr";
 
 
 const Home = () => {
-   const BASE_URL = "http://ip-api.com/json";
-   const url = `${BASE_URL}?fields=585727`;
+   const BASE_URL = import.meta.env.VITE_BASE_URL;
+   const API_KEY = import.meta.env.VITE_API_KEY;
 
    const [newIp, setNewIp] = useState("");
    const [ipAddressDetails, setIpAddressDetails] = useState({
@@ -37,35 +38,29 @@ const Home = () => {
       })
    }
 
-   const getData = async () => {
-      const data = await fetch(url);
-      const parsedData = await data.json();
-      if(parsedData.status === "success"){
-         setIpAddressDetails({
-            ip: parsedData?.query || "",
-            city: parsedData?.city || "",
-            country: parsedData?.country || "",
-            region: parsedData?.region || "",
-            timezone: parsedData?.timezone || "",
-            isp: parsedData?.isp || "",
-            lat: parsedData?.lat || "",
-            lon: parsedData?.lon || ""
-         })
-      }else{
-         clearAddressDetails();
-      }
+   const validateIp = (IP) => {
+      let ipv4 = /(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])/;
+      let ipv6 = /((([0-9a-fA-F]){1,4})\:){7}([0-9a-fA-F]){1,4}/;
 
+      if (IP.match(ipv4))
+         return true;
+      else if (IP.match(ipv6))
+         return true;
+      return false;
+   }
+
+   useEffect(() => {
       let container = L.DomUtil.get("map");
       if (container != null) {
          container._leaflet_id = null;
       }
       // const map = L.map("map").setView(
-      //    [parsedData.lat, parsedData.lon],
+      //    [ipAddressDetails.lat, ipAddressDetails.lon],
       //    13
       // );
 
       let map = L.map('map', {
-         center: [parsedData.lat, parsedData.lon],
+         center: [ipAddressDetails.lat, ipAddressDetails.lon],
          zoom: 13,
          scrollWheelZoom: false
       });
@@ -81,62 +76,65 @@ const Home = () => {
       });
 
       L.marker(
-         [parsedData.lat, parsedData.lon],
+         [ipAddressDetails.lat, ipAddressDetails.lon],
          { icon: locationIcon }
       ).addTo(map);
       // .bindPopup('A pretty CSS popup.<br> Easily customizable.')
       // .openPopup();
+      
+      return () => {
+         map.remove();
+      };
+   }, [ipAddressDetails.lat, ipAddressDetails.lon]);
+
+   const getData = async () => {
+      axios.get(`${BASE_URL}?key=${API_KEY}`)
+         .then(res => {
+            setIpAddressDetails({
+               ip: res?.data?.ip || "",
+               city: res?.data?.location?.city || "",
+               country: res?.data?.country?.name || "",
+               region: res?.data?.location?.principalSubdivision || "",
+               timezone: res?.data?.location?.timeZone?.ianaTimeId || "",
+               isp: res?.data?.network?.organisation|| "",
+               lat: res?.data?.location?.latitude || "",
+               lon: res?.data?.location?.longitude || "",
+            })
+         })
+         .catch(error => {
+            console.log(error);
+            //    toast.error("Please enter a valid ip address.", 
+            //    {
+            //       position: "bottom-center",
+            //       ariaProps: {
+            //       role: 'status',
+            //          'aria-live': 'polite',
+            //       }
+            //    });
+            //    clearAddressDetails();
+         })
    };
 
    const handleClick = async () => {
-      try {
-         const url = newIp === "" ? `${BASE_URL}?fields=585727` : `${BASE_URL}/${newIp}?fields=585727`;
-         const data = await fetch(url);
-         const parsedData = await data.json();
-         if(parsedData.status === "success"){
-            setIpAddressDetails({
-               ip: parsedData?.query || "",
-               city: parsedData?.city || "",
-               country: parsedData?.country || "",
-               region: parsedData?.region || "",
-               timezone: parsedData?.timezone || "",
-               isp: parsedData?.isp || "",
-               lat: parsedData?.lat || "",
-               lon: parsedData?.lon || ""
+      const url = newIp === "" ? `${BASE_URL}?key=${API_KEY}` : `${BASE_URL}?ip=${newIp}&key=${API_KEY}`;
+      if(newIp !== "" && validateIp(newIp)){
+         axios.get(url)
+            .then(res => {
+               setIpAddressDetails({
+                  ip: res?.data?.ip || "",
+                  city: res?.data?.location?.city || "",
+                  country: res?.data?.country?.name || "",
+                  region: res?.data?.location?.principalSubdivision || "",
+                  timezone: res?.data?.location?.timeZone?.ianaTimeId || "",
+                  isp: res?.data?.network?.organisation|| "",
+                  lat: res?.data?.location?.latitude || "",
+                  lon: res?.data?.location?.longitude || "",
+               })
             })
-            setNewIp("");
-         }else{
-            clearAddressDetails();
-         }
-
-         let container = L.DomUtil.get("map");
-         if (container != null) {
-            container._leaflet_id = null;
-         }
-         // const map = L.map("map").setView(
-         //    [parsedData.lat, parsedData.lon],
-         //    13
-         // );
-
-         let map = L.map('map', {
-            center: [parsedData.lat, parsedData.lon],
-            zoom: 13,
-            scrollWheelZoom: false
-         });
-
-         L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom: 35,}).addTo(map);
-         let locationIcon = L.icon({
-            iconUrl: marker,
-            iconSize: [60, 65], // size of the icon
-         });
-
-         L.marker(
-            [parsedData.lat, parsedData.lon],
-            { icon: locationIcon }
-         ).addTo(map);
-         
-      } catch (error) {
-         console.log(error)
+            .catch(error => {
+               console.log(error);
+            })
+      }else{
          toast.error("Please enter a valid ip address.", 
          {
             position: "bottom-center",
@@ -145,6 +143,7 @@ const Home = () => {
                'aria-live': 'polite',
             }
          });
+         // clearAddressDetails();
       }
    };
 
@@ -182,7 +181,7 @@ const Home = () => {
             </div>
 
             <div className="flex items-center justify-center">
-               <div className="details bg-white h-fit p-3 relative md:absolute flex flex-col justify-center w-[90%] lg:w-[80vw] top-[-50px] sm:top-[-65px] md:top-[100px] z-[999] rounded-xl">
+               <div className="details bg-white h-fit p-3 relative md:absolute flex flex-col justify-center w-[90%] lg:w-[85vw] top-[-50px] sm:top-[-65px] md:top-[100px] z-[999] rounded-xl">
 
                   {/* Search */}
                   <div className="btnBox container flex items-center w-full sm:w-[80%] lg:w-[60%] relative mx-auto mb-8 mt-3 bg-gray-900 rounded-xl">
